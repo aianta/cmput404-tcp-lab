@@ -14,14 +14,15 @@ def send_request(host, port, request):
         client_socket.connect((host,port))
         # Send the request through the connected socket.
         client_socket.send(request)
+         # Shut the socket to further writes. Tells server we're done sending.
+        client_socket.shutdown(socket.SHUT_WR)
         
         # Assemble response, be careful here, recall that recv(bytes) blocks until it recieves data!
         data = client_socket.recv(BYTES_TO_READ)
         result = b'' + data
-        while(b"</html>" not in result): # Keep reading data until we get an '</html>' tag
+        while len(data) > 0: # Keep reading data until connection terminates
             data = client_socket.recv(BYTES_TO_READ)
             result += data
-    
         # Return response
         return result
 
@@ -30,14 +31,15 @@ def handle_connection(conn, addr):
     with conn:
         print(f"Connected by {addr}")
 
+        request = b''
         while True: # While the client is keeping the socket open
             data = conn.recv(BYTES_TO_READ) # read some data from the socket
-            if not data: # If the socket has been closed, break.
+            if not data: # If the socket has been closed to further writes, break.
                 break
             print(data) # Otherwise, print the data to the screen
-            response = send_request("www.google.com", 80, data) # and send it as a request to www.google.com
-            conn.sendall(response) #return the response from www.google.com back to the client
-        
+            request += data
+        response = send_request("www.google.com", 80, request) # and send it as a request to www.google.com
+        conn.sendall(response) #return the response from www.google.com back to the client
 
 # Start single-threaded proxy server
 def start_server():

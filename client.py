@@ -10,6 +10,7 @@ def get(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host,port))
     s.send(request)
+    s.shutdown(socket.SHUT_WR)
     result = s.recv(BYTES_TO_READ)
     while(len(result)>0):
         print(result)
